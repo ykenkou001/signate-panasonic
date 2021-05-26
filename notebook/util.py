@@ -16,3 +16,11 @@ def draw_rectangle(img, pts):
 def draw_polylines(img, pts):
     pts = pts.reshape((-1, 1, 2))
     return cv2.polylines(img, [pts], True, (0, 0, 255), 2)
+
+
+
+
+if __name__ == '__main__':
+    import sys
+
+    print(sys.version)
