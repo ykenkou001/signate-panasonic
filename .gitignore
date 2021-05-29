@@ -3,3 +3,4 @@ signate.json
 .python-version
 .vscode
 __pycache__
+.ssh
