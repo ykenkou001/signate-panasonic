@@ -5,10 +5,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-test_images = sorted(Path('../data/test_images').glob('**/*.png'))
-train_images = sorted(Path('../data/train_images').glob('**/*.png'))
+test_images = sorted(Path('data/test_images').glob('**/*.png'))
+train_images = sorted(Path('data/train_images').glob('**/*.png'))
 train_annotations = sorted(
-    Path('../data/train_annotations/').glob('**/*.json'))
+    Path('data/train_annotations').glob('**/*.json'))
 
 rect_keys = ['引戸', '折戸', '開戸']
 polygon_keys = ['LDK', '廊下', '浴室']
@@ -33,7 +33,7 @@ def draw_rectangle(img, pts):
     return cv2.rectangle(img, tuple(pts[:2]), tuple(pts[2:]), (255, 0, 0), 2)
 
 
-def draw_polylines(img, pts, rgb=(0, 0, 255)):
+def draw_polylines(img: np.ndarray, pts: np.ndarray, rgb=(0, 0, 255)):
     """画像情に多角形を描写する
 
     Args:
@@ -47,7 +47,7 @@ def draw_polylines(img, pts, rgb=(0, 0, 255)):
     return cv2.polylines(img, [pts], True, rgb, 2)
 
 
-def save_imgs_with_figure(num):
+def save_imgs_with_figure(num: int):
     """"画像にアノテーションし（矩形や多角形を描写し）、保存する
 
     Args:
@@ -75,23 +75,23 @@ def save_imgs_with_figure(num):
                 os.path.basename(train_images[num]), img)
 
 
-def convert_to_coco_format(json_file):
+def convert_to_coco_format(num: int):
+    # json, image
+    json_file = train_annotations[num]
+    img = train_images[num]
+    print('json_file: ', json_file)
+    print('img: ', img)
+
     attrDict = dict()
-    attrDict["categories"] = [{"supercategory": "door", "id": 1,
-                               "name": "引戸"},
-                              {"supercategory": "door", "id": 2,
-                              "name": "折戸"},
-                              {"supercategory": "door", "id": 3,
-                                  "name": "開戸"},
-                              {"supercategory": "room", "id": 1,
-                              "name": "LDK"},
-                              {"supercategory": "room", "id": 2,
-                                  "name": "廊下"},
-                              {"supercategory": "room", "id": 3,
-                              "name": "浴室"},
-                              {"supercategory": "room", "id": 4,
-                              "name": "洋室"},
-                              ]
+    attrDict["categories"] = [
+        {"supercategory": "door", "id": 1, "name": "引戸"},
+        {"supercategory": "door", "id": 2, "name": "折戸"},
+        {"supercategory": "door", "id": 3, "name": "開戸"},
+        {"supercategory": "room", "id": 1, "name": "LDK"},
+        {"supercategory": "room", "id": 2, "name": "廊下"},
+        {"supercategory": "room", "id": 3, "name": "浴室"},
+        {"supercategory": "room", "id": 4, "name": "洋室"},
+    ]
     images = list()
     annotations = list()
     image_id = 0
@@ -125,7 +125,8 @@ def convert_to_coco_format(json_file):
                         annotation["ignore"] = 0
                         annotation["id"] = id1
                         annotation["segmentation"] = [
-                            [x1, y1, x1, (y1 + y2), (x1 + x2), (y1 + y2), (x1 + x2), y1]]
+                            [x1, y1, x1, (y1 + y2), (x1 + x2), (y1 + y2),
+                                (x1 + x2), y1]]
                         id1 += 1
                         annotations.append(annotation)
 
@@ -145,7 +146,8 @@ def convert_to_coco_format(json_file):
 
 
 if __name__ == '__main__':
-    pass
+    num = len(train_images)
+    convert_to_coco_format(3)
     # import multiprocessing as multi
     # from multiprocessing import Pool
 
