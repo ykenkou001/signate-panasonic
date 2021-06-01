@@ -75,37 +75,36 @@ def save_imgs_with_figure(num: int):
                 os.path.basename(train_images[num]), img)
 
 
-def convert_to_coco_format(num: int):
-    # json, image
-    json_file = train_annotations[num]
-    img = train_images[num]
-    print('json_file: ', json_file)
-    print('img: ', img)
-
+def convert_to_coco_format(train_images_list_length: int):
     attrDict = dict()
     attrDict["categories"] = [
         {"supercategory": "door", "id": 1, "name": "引戸"},
         {"supercategory": "door", "id": 2, "name": "折戸"},
         {"supercategory": "door", "id": 3, "name": "開戸"},
-        {"supercategory": "room", "id": 1, "name": "LDK"},
-        {"supercategory": "room", "id": 2, "name": "廊下"},
-        {"supercategory": "room", "id": 3, "name": "浴室"},
-        {"supercategory": "room", "id": 4, "name": "洋室"},
+        {"supercategory": "room", "id": 4, "name": "LDK"},
+        {"supercategory": "room", "id": 5, "name": "廊下"},
+        {"supercategory": "room", "id": 6, "name": "浴室"},
+        {"supercategory": "room", "id": 7, "name": "洋室"},
     ]
     images = list()
     annotations = list()
     image_id = 0
-    for file in json_file:
-        image_id = image_id + 1
-        annotation_path = file
+
+    for num in range(train_images_list_length):
+        # json, image
+        json_file = train_annotations[num]
+        img_path = train_images[num]
+        img = cv2.imread(img_path)
+        print('json_file: ', json_file)
+        print('img: ', img_path)
+
+        image_id += 1
         image = dict()
-        doc = xmltodict.parse(
-            open(annotation_path).read(), force_list=('object'))
-        image['file_name'] = str(doc['annotation']['filename'])
-        image['height'] = int(doc['annotation']['size']['height'])
-        image['width'] = int(doc['annotation']['size']['width'])
+        image['file_name'] = os.path.basename(img_path)
+        image['height'] = img.shape[0]
+        image['width'] = img.shape[1]
         image['id'] = image_id
-        print("File Name: {} and image_id {}".format(file, image_id))
+        print("File Name: {} and image_id {}".format(img_path, image_id))
         images.append(image)
         id1 = 1
         if 'object' in doc['annotation']:
