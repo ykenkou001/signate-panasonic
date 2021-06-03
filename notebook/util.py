@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import os
 from pathlib import Path
@@ -14,8 +15,8 @@ rect_keys = ['引戸', '折戸', '開戸']
 polygon_keys = ['LDK', '廊下', '浴室']
 
 
-def read_json(json_path: str):
-    json_load = open(json_path)
+def read_json(json_path):
+    json_load = open(json_path, 'r')
     json_file = json.load(json_load)
     return json_file
 
@@ -92,11 +93,9 @@ def convert_to_coco_format(train_images_list_length: int):
 
     for num in range(train_images_list_length):
         # json, image
-        json_file = train_annotations[num]
+        json_file = read_json(train_annotations[num])
         img_path = train_images[num]
-        img = cv2.imread(img_path)
-        print('json_file: ', json_file)
-        print('img: ', img_path)
+        img = cv2.imread(str(img_path))
 
         image_id += 1
         image = dict()
@@ -107,33 +106,29 @@ def convert_to_coco_format(train_images_list_length: int):
         print("File Name: {} and image_id {}".format(img_path, image_id))
         images.append(image)
         id1 = 1
-        if 'object' in doc['annotation']:
-            for obj in doc['annotation']['object']:
-                for value in attrDict["categories"]:
-                    annotation = dict()
-                    if str(obj['name']) == value["name"]:
-                        annotation["iscrowd"] = 0
-                        annotation["image_id"] = image_id
-                        x1 = int(obj["bndbox"]["xmin"]) - 1
-                        y1 = int(obj["bndbox"]["ymin"]) - 1
-                        x2 = int(obj["bndbox"]["xmax"]) - x1
-                        y2 = int(obj["bndbox"]["ymax"]) - y1
-                        annotation["bbox"] = [x1, y1, x2, y2]
-                        annotation["area"] = float(x2 * y2)
-                        annotation["category_id"] = value["id"]
-                        annotation["ignore"] = 0
-                        annotation["id"] = id1
-                        annotation["segmentation"] = [
-                            [x1, y1, x1, (y1 + y2), (x1 + x2), (y1 + y2),
-                                (x1 + x2), y1]]
-                        id1 += 1
-                        annotations.append(annotation)
+
+        for value in attrDict["categories"]:
+            annotation = dict()
+            if str(obj['name']) == value["name"]:
+                annotation["iscrowd"] = 0
+                annotation["image_id"] = image_id
+                x1 = int(obj["bndbox"]["xmin"]) - 1
+                y1 = int(obj["bndbox"]["ymin"]) - 1
+                x2 = int(obj["bndbox"]["xmax"]) - x1
+                y2 = int(obj["bndbox"]["ymax"]) - y1
+                annotation["bbox"] = [x1, y1, x2, y2]
+                annotation["area"] = float(x2 * y2)
+                annotation["category_id"] = value["id"]
+                annotation["ignore"] = 0
+                annotation["id"] = id1
+                annotation["segmentation"] = [
+                    [x1, y1, x1, (y1 + y2), (x1 + x2), (y1 + y2),
+                        (x1 + x2), y1]]
+                id1 += 1
+                annotations.append(annotation)
 
             else:
                 print("File: {} doesn't have any object".format(file))
-
-        else:
-            print("File: {} not found".format(file))
 
     attrDict["images"] = images
     attrDict["annotations"] = annotations
