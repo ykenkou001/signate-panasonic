@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 import json
 import os
 from pathlib import Path
+from pprint import pprint
 
 import cv2
 import numpy as np
@@ -108,6 +108,7 @@ def convert_to_coco_format(train_images_list_length: int):
         id1 = 1
 
         for value in attrDict["categories"]:
+            print('value: ', value["name"])
             annotation = dict()
             if str(obj['name']) == value["name"]:
                 annotation["iscrowd"] = 0
