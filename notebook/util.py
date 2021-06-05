@@ -5,14 +5,7 @@ from pprint import pprint
 
 import cv2
 import numpy as np
-
-test_images = sorted(Path('data/test_images').glob('**/*.png'))
-train_images = sorted(Path('data/train_images').glob('**/*.png'))
-train_annotations = sorted(
-    Path('data/train_annotations').glob('**/*.json'))
-
-rect_keys = ['引戸', '折戸', '開戸']
-polygon_keys = ['LDK', '廊下', '浴室']
+from tqdm import tqdm
 
 
 def read_json(json_path):
@@ -76,7 +69,8 @@ def save_imgs_with_figure(num: int):
                 os.path.basename(train_images[num]), img)
 
 
-def convert_to_coco_format(train_images_list_length: int):
+def convert_to_coco_format(train_images_list: list, save_path: str) -> None:
+    # coco format json
     attrDict = dict()
     attrDict["categories"] = [
         {"supercategory": "door", "id": 1, "name": "引戸"},
@@ -87,62 +81,57 @@ def convert_to_coco_format(train_images_list_length: int):
         {"supercategory": "room", "id": 6, "name": "浴室"},
         {"supercategory": "room", "id": 7, "name": "洋室"},
     ]
-    images = list()
-    annotations = list()
+    images = []
+    annotations = []
     image_id = 0
 
-    for num in range(train_images_list_length):
-        # json, image
-        json_file = read_json(train_annotations[num])
-        img_path = train_images[num]
-        img = cv2.imread(str(img_path))
+    for num in tqdm(range(len(train_images_list))):
+        js = read_json(str(train_annotations[num]))
+        img = cv2.imread(str(train_images[num]))
 
+        # imageの情報
         image_id += 1
-        image = dict()
-        image['file_name'] = os.path.basename(img_path)
-        image['height'] = img.shape[0]
-        image['width'] = img.shape[1]
+        image = {}
+        image['file_name'] = train_images[num].name
+        image['height'], image['width'] = img.shape[0], img.shape[1]
         image['id'] = image_id
-        print("File Name: {} and image_id {}".format(img_path, image_id))
         images.append(image)
+
         id1 = 1
-
         for value in attrDict["categories"]:
-            print('value: ', value["name"])
-            annotation = dict()
-            if str(obj['name']) == value["name"]:
-                annotation["iscrowd"] = 0
-                annotation["image_id"] = image_id
-                x1 = int(obj["bndbox"]["xmin"]) - 1
-                y1 = int(obj["bndbox"]["ymin"]) - 1
-                x2 = int(obj["bndbox"]["xmax"]) - x1
-                y2 = int(obj["bndbox"]["ymax"]) - y1
-                annotation["bbox"] = [x1, y1, x2, y2]
-                annotation["area"] = float(x2 * y2)
-                annotation["category_id"] = value["id"]
-                annotation["ignore"] = 0
-                annotation["id"] = id1
-                annotation["segmentation"] = [
-                    [x1, y1, x1, (y1 + y2), (x1 + x2), (y1 + y2),
-                        (x1 + x2), y1]]
-                id1 += 1
-                annotations.append(annotation)
-
-            else:
-                print("File: {} doesn't have any object".format(file))
+            if value['name'] in list(js['labels'].keys()):
+                for elem in js['labels'][value['name']]:
+                    anno_dict = {}
+                    elem = np.array(elem).flatten()
+                    anno_dict['iscrowd'] = 0
+                    anno_dict['image_id'] = image_id
+                    xmin, xmax = min(elem[::2]), max(elem[::2])
+                    ymin, ymax = min(elem[1::2]), max(elem[1::2])
+                    anno_dict['bbox'] = [xmin, ymin, xmax - xmin, ymax - ymin]
+                    anno_dict['area'] = (xmax - xmin) * (ymax - ymin)
+                    anno_dict['category_id'] = value['id']
+                    anno_dict['id'] = id1
+                    anno_dict['segmentation'] = elem.tolist()
+                    id1 += 1
+                    annotations.append(anno_dict)
 
     attrDict["images"] = images
     attrDict["annotations"] = annotations
-    attrDict["type"] = "instances"
 
-    jsonString = json.dumps(attrDict)
-    with open("train.json", "w") as f:
-        f.write(jsonString)
+    with open(save_path, "w", encoding="utf-8") as f:
+        json.dump(attrDict, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
-    num = len(train_images)
-    convert_to_coco_format(3)
+    test_images = sorted(Path('data/test_images').glob('**/*.png'))
+    train_images = sorted(Path('data/train_images').glob('**/*.png'))
+    train_annotations = sorted(
+        Path('data/train_annotations').glob('**/*.json'))
+
+    rect_keys = ['引戸', '折戸', '開戸']
+    polygon_keys = ['LDK', '廊下', '浴室']
+
+    convert_to_coco_format(train_images, './train.json')
     # import multiprocessing as multi
     # from multiprocessing import Pool
 
